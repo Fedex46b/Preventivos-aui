@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50 text-slate-800">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Mantenimiento Preventivo - WiFi & Cámaras</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#f8fafc">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232b4299' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h.01'/%3E%3Cpath d='M8.5 16.5a5 5 0 0 1 7 0'/%3E%3Cpath d='M5 13a10 10 0 0 1 14 0'/%3E%3Cpath d='M1.5 9.5a15 15 0 0 1 21 0'/%3E%3C/svg%3E">
+  
+  <!-- Google Fonts & Tailwind CSS CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons & SweetAlert2 & HTML5 QR Code & jsPDF -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f2f5ff',
+              100: '#e4ebff',
+              300: '#a3bcff',
+              400: '#638aff',
+              500: '#2b4299', // AUI Dark Blue (Corporate)
+              600: '#1d2e70',
+              900: '#0e1533',
+            },
+            accent: {
+              400: '#4caebd', // AUI Corporate Teal
+              500: '#3ba0af',
+              600: '#2c8390',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Ocultar barra de desplazamiento por defecto */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .custom-shadow {
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 4px 12px -5px rgba(0, 0, 0, 0.03);
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    @keyframes radar-pulse {
+      0% { transform: scale(0.9); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .pulse-ring {
+      animation: radar-pulse 2s infinite ease-out;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased select-none pb-safe bg-slate-50 text-slate-800">
+
+  <!-- PANTALLA 1: LOGIN -->
+  <div id="login-screen" class="min-h-full flex flex-col items-center justify-center px-6 py-12 bg-gradient-to-b from-slate-100 via-slate-50 to-slate-200">
+    <div class="w-full max-w-md space-y-6 glass p-8 rounded-3xl custom-shadow text-center">
+      <div class="flex flex-col items-center justify-center gap-4">
+        <!-- Logo AUI -->
+        <div class="w-full max-w-[220px] p-3 bg-white rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-center">
+          <img src="logo-aui.png" alt="AUI 4.0" class="w-full h-auto object-contain">
+        </div>
+        <div>
+          <h2 class="text-lg font-bold tracking-wide uppercase text-slate-800">Acceso Técnicos</h2>
+          <p class="text-xs text-slate-500 mt-1">Ingresá tu usuario registrado para comenzar</p>
+        </div>
+      </div>
+
+      <!-- Alerta de Sincronización Local/Online -->
+      <div id="sync-status-indicator" class="text-[11px] text-slate-650 bg-slate-100 border border-slate-200/60 rounded-xl py-2 px-3 flex items-center justify-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse"></span>
+        <span id="sync-status-text">Base de datos local activa</span>
+      </div>
+
+      <form onsubmit="handleLogin(event)" class="space-y-4 pt-2">
+        <div class="relative">
+          <input type="text" id="login-username" required placeholder="Ej: fede" 
+                 class="w-full bg-white border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 rounded-xl px-4 py-3.5 text-sm text-slate-800 placeholder-slate-400 transition outline-none pl-11 text-center font-semibold tracking-wide shadow-sm">
+          <i data-lucide="user" class="absolute left-4 top-4 w-4 h-4 text-slate-400"></i>
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-bold py-3.5 rounded-xl transition shadow-md shadow-brand-500/10 active:scale-[0.98]">
+          Ingresar
+        </button>
+      </form>
+
+      <!-- Footer FKdesing -->
+      <div class="pt-4 border-t border-slate-200/60 text-center">
+        <p class="text-[10px] tracking-widest uppercase font-semibold text-slate-400 hover:text-slate-600 transition-colors cursor-default">FKdesing</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 2: SELECCIÓN DE TAREA -->
+  <div id="selection-screen" class="hidden min-h-full flex flex-col items-center justify-center px-6 py-12 bg-gradient-to-b from-slate-100 via-slate-50 to-slate-200">
+    <div class="w-full max-w-md space-y-6 text-center">
+      <!-- Logo AUI en la Selección -->
+      <div class="flex justify-center mb-2">
+        <div class="max-w-[130px] p-2 bg-white rounded-xl border border-slate-200/80 shadow-sm">
+          <img src="logo-aui.png" alt="AUI Logo" class="w-full h-auto object-contain">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between mb-4 glass px-4 py-3 rounded-2xl">
+        <div class="text-left">
+          <p class="text-[10px] text-slate-500 uppercase font-semibold">Técnico Activo</p>
+          <h2 id="welcome-user-name" class="text-sm font-bold text-slate-800">Fede</h2>
+        </div>
+        <button onclick="handleLogout()" class="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-rose-500 hover:border-rose-250 transition shadow-sm" title="Cerrar Sesión">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Seleccioná el Mantenimiento</h3>
+
+      <div class="grid grid-cols-1 gap-4">
+        <!-- Botón WiFi Antenas -->
+        <button onclick="selectTask('Antena')" class="glass hover:border-brand-500/30 hover:bg-white/80 p-6 rounded-3xl text-left flex items-center gap-5 transition group active:scale-[0.99] border border-slate-200/60 shadow-sm">
+          <div class="w-14 h-14 rounded-2xl bg-brand-500/5 group-hover:bg-brand-500/10 flex items-center justify-center text-brand-500 transition shadow-sm border border-brand-500/10">
+            <i data-lucide="wifi" class="w-7 h-7"></i>
+          </div>
+          <div class="flex-1">
+            <h4 class="text-sm font-bold text-slate-800 group-hover:text-brand-500 transition uppercase tracking-wide">Antenas Wi-Fi</h4>
+            <p class="text-xs text-slate-500 mt-1">Inspección de enlace, jabalinas, conectores y protector.</p>
+          </div>
+        </button>
+
+        <!-- Botón Cámaras -->
+        <button onclick="selectTask('Camara')" class="glass hover:border-accent-600/30 hover:bg-white/80 p-6 rounded-3xl text-left flex items-center gap-5 transition group active:scale-[0.99] border border-slate-200/60 shadow-sm">
+          <div class="w-14 h-14 rounded-2xl bg-accent-500/5 group-hover:bg-accent-500/10 flex items-center justify-center text-accent-600 transition shadow-sm border border-accent-500/10">
+            <i data-lucide="video" class="w-7 h-7"></i>
+          </div>
+          <div class="flex-1">
+            <h4 class="text-sm font-bold text-slate-800 group-hover:text-accent-600 transition uppercase tracking-wide">Cámaras de Seguridad</h4>
+            <p class="text-xs text-slate-500 mt-1">Inspección de domo, PoE, sellado de caja estanco y enfoque.</p>
+          </div>
+        </button>
+      </div>
+
+      <!-- Footer FKdesing -->
+      <footer class="pt-6 text-center">
+        <p class="text-[10px] tracking-widest uppercase font-semibold text-slate-400">FKdesing</p>
+      </footer>
+    </div>
+  </div>
+
+  <!-- PANTALLA 3: FORMULARIO PRINCIPAL -->
+  <div id="main-form-screen" class="hidden h-full flex flex-col">
+    <!-- Header Fijo Superior -->
+    <header class="glass sticky top-0 z-50 px-4 py-3 flex items-center justify-between border-b border-slate-200/80">
+      <div class="flex items-center gap-2">
+        <button onclick="goBackToSelection()" class="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition shadow-sm">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        </button>
+        <div class="flex items-center gap-2">
+          <!-- Mini Logo AUI -->
+          <div class="w-8 h-8 p-1 bg-white rounded-lg border border-slate-200/85 flex items-center justify-center shadow-sm">
+            <img src="logo-aui.png" alt="AUI Logo" class="w-full h-full object-contain">
+          </div>
+          <div>
+            <h1 id="form-title" class="text-sm font-extrabold tracking-wide uppercase text-slate-800">Antena WiFi</h1>
+            <p class="text-[10px] text-slate-500 font-bold tracking-wider">PREVENTIVOS AUI 4.0</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Indicadores y Configuración -->
+      <div class="flex items-center gap-2">
+        <div id="connection-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-250">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Online</span>
+        </div>
+        <div id="offline-counter-badge" class="hidden flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-400 text-slate-900 animate-bounce">
+          <i data-lucide="cloud-off" class="w-3 h-3"></i>
+          <span id="offline-count">0</span>
+        </div>
+        <!-- Botón de Configuración del Backend -->
+        <button type="button" onclick="toggleBackendModal(true)" class="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 border border-transparent hover:border-slate-200 transition" title="Configurar Planilla">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Contenedor Principal Scrollable -->
+    <main class="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+
+      <!-- Alerta Google Sheets Config -->
+      <div id="backend-alert" class="bg-amber-50 border border-amber-250 rounded-2xl p-4 flex gap-3 shadow-sm">
+        <div class="text-amber-500 pt-0.5">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-xs font-bold text-amber-800">Modo Demo Local Activo</h3>
+          <p class="text-[11px] text-slate-600 mt-1 leading-relaxed">
+            La app está guardando temporalmente en el almacenamiento de tu celular (localStorage). Para conectar con tu planilla de Google Sheets, hacé clic en el botón de abajo.
+          </p>
+          <button onclick="toggleBackendModal(true)" class="mt-3 text-[11px] font-bold text-slate-900 bg-amber-400 hover:bg-amber-300 border border-amber-500/20 px-3 py-1.5 rounded-lg transition shadow-sm">
+            Configurar Google Sheets
+          </button>
+        </div>
+      </div>
+
+      <form id="maintenance-form" onsubmit="handleSubmit(event)" class="space-y-6">
+
+        <!-- PANTALLA 1: DATOS DEL EQUIPO -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-slate-200 text-xs font-extrabold flex items-center justify-center border border-slate-350 text-brand-500 shadow-sm">1</span>
+            <h2 class="text-sm font-bold tracking-wide text-slate-800">Datos Iniciales</h2>
+          </div>
+
+          <div class="glass rounded-2xl p-4 space-y-4 shadow-sm">
+            <!-- Localidad -->
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5" for="equipment-location">Localidad *</label>
+              
+              <!-- Buscador de Localidad -->
+              <div class="relative mb-2">
+                <input type="text" id="location-search" placeholder="Escribe para filtrar localidades..." oninput="handleLocationSearch()"
+                       class="w-full bg-white border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 transition outline-none pl-10 shadow-sm">
+                <i data-lucide="search" class="absolute left-3.5 top-3 w-3.5 h-3.5 text-slate-400"></i>
+              </div>
+
+              <div class="relative">
+                <select id="equipment-location" required onchange="handleLocationChange()"
+                        class="w-full bg-white border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 rounded-xl px-4 py-3.5 text-sm text-slate-800 transition outline-none pl-11 appearance-none shadow-sm">
+                  <option value="" disabled selected>Elegir localidad...</option>
+                </select>
+                <i data-lucide="map" class="absolute left-4 top-3.5 w-4 h-4 text-slate-400"></i>
+                <i data-lucide="chevron-down" class="absolute right-4 top-3.5 w-4 h-4 text-slate-400 pointer-events-none"></i>
+              </div>
+            </div>
+
+            <!-- Nombre de Equipo (con Buscador y QR) -->
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5" for="equipment-name">Equipo / Antena / Cámara *</label>
+              
+              <!-- Buscador e Icono QR -->
+              <div class="flex gap-2 mb-2">
+                <div class="relative flex-1">
+                  <input type="text" id="equipment-search" placeholder="Escribe para filtrar equipos..." oninput="handleEquipmentSearch()"
+                         class="w-full bg-white border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 transition outline-none pl-10 shadow-sm">
+                  <i data-lucide="search" class="absolute left-3.5 top-3 w-3.5 h-3.5 text-slate-400"></i>
+                </div>
+                
+                <button type="button" onclick="openQrScanner()" 
+                        class="px-3.5 bg-white hover:bg-slate-50 border border-slate-200 hover:border-brand-500 text-slate-600 rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm" title="Escanear Código QR">
+                  <i data-lucide="qr-code" class="w-4 h-4"></i>
+                  <span class="text-[10px] font-bold uppercase">QR</span>
+                </button>
+              </div>
+
+              <div class="relative">
+                <select id="equipment-name" required onchange="showEquipmentDetails()"
+                        class="w-full bg-white border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 rounded-xl px-4 py-3.5 text-sm text-slate-800 transition outline-none pl-11 appearance-none shadow-sm">
+                  <option value="" disabled selected>Selecciona una localidad primero...</option>
+                </select>
+                <i data-lucide="hash" class="absolute left-4 top-3.5 w-4 h-4 text-slate-400"></i>
+                <i data-lucide="chevron-down" class="absolute right-4 top-3.5 w-4 h-4 text-slate-400 pointer-events-none"></i>
+              </div>
+
+              <!-- Detalle del Equipo Seleccionado (Tipo de Equipo y Zona) -->
+              <div id="equipment-details-container" class="hidden grid grid-cols-2 gap-2.5 pt-2.5 border-t border-slate-200/80 mt-3 transition-all duration-300 ease-out opacity-0 transform translate-y-[-10px]">
+                <div class="bg-white/65 border border-slate-200/70 rounded-xl px-3 py-2 text-[11px] text-slate-600 flex flex-col shadow-sm">
+                  <span class="block font-bold text-slate-400 uppercase tracking-widest text-[8px] mb-0.5">Tipo de Equipo</span>
+                  <span id="detail-eq-type" class="font-semibold text-slate-800 truncate">--</span>
+                </div>
+                <div class="bg-white/65 border border-slate-200/70 rounded-xl px-3 py-2 text-[11px] text-slate-600 flex flex-col shadow-sm">
+                  <span class="block font-bold text-slate-400 uppercase tracking-widest text-[8px] mb-0.5">Zona / Ubicación</span>
+                  <span id="detail-eq-zone" class="font-semibold text-slate-800 truncate">--</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Módulo GPS -->
+            <div class="border-t border-slate-200/80 pt-4">
+              <span class="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-2">Geolocalización GPS</span>
+              <div id="gps-card" class="bg-white border border-slate-200 rounded-xl p-3.5 flex items-center justify-between transition-colors shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="relative w-8 h-8 rounded-lg bg-slate-100 border border-slate-200/80 flex items-center justify-center overflow-hidden">
+                    <div id="gps-pulse" class="absolute inset-0 bg-brand-500/10 rounded-lg pulse-ring"></div>
+                    <i id="gps-icon" data-lucide="navigation" class="w-4 h-4 text-slate-500 relative z-10"></i>
+                  </div>
+                  <div>
+                    <div id="gps-status" class="text-xs font-bold text-slate-700">Buscando señal GPS...</div>
+                    <div id="gps-coordinates" class="text-[10px] text-slate-500 font-mono mt-0.5">Esperando coordenadas...</div>
+                  </div>
+                </div>
+                <button type="button" onclick="requestGPSLocation()" class="text-xs text-brand-500 hover:text-brand-600 font-bold px-2 py-1 rounded-lg hover:bg-brand-500/5 transition">
+                  Recargar
+                </button>
+              </div>
+              <input type="hidden" id="gps-lat" name="latitude">
+              <input type="hidden" id="gps-lng" name="longitude">
+              <input type="hidden" id="gps-acc" name="accuracy">
+            </div>
+          </div>
+        </section>
+
+        <!-- PANTALLA 2: EVIDENCIA INICIAL (ANTES) -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-slate-200 text-xs font-bold flex items-center justify-center border border-slate-355 text-brand-500 shadow-sm">2</span>
+            <h2 class="text-sm font-bold tracking-wide text-slate-800">Evidencia Inicial (Antes)</h2>
+          </div>
+
+          <div class="glass rounded-2xl p-4 shadow-sm">
+            <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Foto del Antes *</span>
+            <label id="photo-before-container" class="border-2 border-dashed border-slate-200 hover:border-brand-500 bg-white/60 rounded-xl w-full aspect-video flex flex-col items-center justify-center cursor-pointer transition relative group overflow-hidden p-4 shadow-sm">
+              <input type="file" id="photo-before-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelect(event, 'before')">
+              <i data-lucide="camera" class="w-8 h-8 text-slate-400 group-hover:text-brand-500 transition mb-2"></i>
+              <span class="text-xs text-slate-700 font-semibold">Tomar Foto del Estado Inicial</span>
+              <span class="text-[10px] text-slate-500 mt-0.5">Captura la condición del equipo al llegar</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- PANTALLA 3: CHECKLIST PREVENTIVO -->
+        <section class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-slate-200 text-xs font-bold flex items-center justify-center border border-slate-355 text-brand-500 shadow-sm">3</span>
+              <h2 class="text-sm font-bold tracking-wide text-slate-800">Checklist Preventivo</h2>
+            </div>
+            <span class="text-[10px] text-slate-500 bg-slate-200 px-2 py-1 rounded-full border border-slate-300 font-semibold shadow-sm">
+              Obligatorio *
+            </span>
+          </div>
+
+          <div id="checklist-container" class="space-y-3">
+            <!-- Los Items del checklist se generan dinámicamente aquí por JS -->
+          </div>
+        </section>
+
+        <!-- PANTALLA 4: EVIDENCIA FINAL (DESPUÉS) -->
+        <section class="space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-slate-200 text-xs font-bold flex items-center justify-center border border-slate-355 text-brand-500 shadow-sm">4</span>
+            <h2 class="text-sm font-bold tracking-wide text-slate-800">Evidencia Final (Después)</h2>
+          </div>
+
+          <div class="glass rounded-2xl p-4 shadow-sm">
+            <span class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Foto del Después / Final *</span>
+            <label id="photo-after-container" class="border-2 border-dashed border-slate-200 hover:border-brand-500 bg-white/60 rounded-xl w-full aspect-video flex flex-col items-center justify-center cursor-pointer transition relative group overflow-hidden p-4 shadow-sm">
+              <input type="file" id="photo-after-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelect(event, 'after')">
+              <i data-lucide="camera" class="w-8 h-8 text-slate-400 group-hover:text-brand-500 transition mb-2"></i>
+              <span class="text-xs text-slate-700 font-semibold">Tomar Foto del Estado Final</span>
+              <span class="text-[10px] text-slate-500 mt-0.5">Captura el resultado tras realizar el mantenimiento</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Observaciones -->
+        <section class="space-y-4">
+          <div class="glass rounded-2xl p-4 shadow-sm">
+            <label class="block text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1.5" for="notes">Notas / Observaciones Adicionales</label>
+            <textarea id="notes" placeholder="Describí cualquier detalle o reemplazo realizado..." rows="3"
+                      class="w-full bg-white border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder-slate-400 transition outline-none resize-none shadow-sm"></textarea>
+          </div>
+        </section>
+
+        <!-- Botón de Envío -->
+        <div class="pt-2">
+          <button type="submit" id="submit-btn" 
+                  class="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-bold py-4 rounded-2xl shadow-md shadow-brand-500/10 active:scale-[0.98] transition flex items-center justify-center gap-2 text-sm select-none">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>Enviar Reporte Preventivo</span>
+          </button>
+        </div>
+
+        <!-- Footer FKdesing -->
+        <footer class="pt-6 pb-2 text-center border-t border-slate-200/80">
+          <p class="text-[10px] tracking-widest uppercase font-semibold text-slate-400">FKdesing</p>
+        </footer>
+      </form>
+    </main>
+  </div>
+
+  <!-- Modal del Escáner QR -->
+  <div id="qr-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+    <div class="glass w-full max-w-md rounded-2xl p-6 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
+        <div class="flex items-center gap-2 text-brand-500">
+          <i data-lucide="qr-code" class="w-5 h-5"></i>
+          <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Escanear Código QR</h3>
+        </div>
+        <button onclick="closeQrScanner()" class="text-slate-400 hover:text-slate-700 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <p class="text-xs text-slate-500 leading-relaxed">
+        Apunta con la cámara de tu celular al código QR del equipo. Se detectará y seleccionará automáticamente.
+      </p>
+
+      <!-- Área de la Cámara -->
+      <div class="relative w-full aspect-square bg-slate-950 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center">
+        <div id="qr-reader" class="w-full h-full"></div>
+        <!-- Marco de escaneo estético -->
+        <div class="absolute inset-8 border-2 border-brand-500/30 pointer-events-none rounded-lg flex items-center justify-center">
+          <div class="w-full h-0.5 bg-brand-500 animate-pulse animate-duration-1000"></div>
+        </div>
+      </div>
+
+      <button type="button" onclick="closeQrScanner()" class="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-3 rounded-xl text-xs font-semibold transition shadow-sm">
+        Cancelar y cerrar
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal para Configurar Google Sheets (Apps Script) -->
+  <div id="backend-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+    <div class="glass w-full max-w-md rounded-2xl p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="database" class="w-5 h-5 text-brand-500"></i>
+          <h3 class="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Conectar Google Sheets</h3>
+        </div>
+        <button onclick="toggleBackendModal(false)" class="text-slate-400 hover:text-slate-700 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <p class="text-xs text-slate-500 leading-relaxed">
+        Ingresá la URL de la aplicación web que obtuviste al implementar tu script en Google Apps Script.
+      </p>
+
+      <form id="backend-config-form" onsubmit="saveBackendConfig(event)" class="space-y-3">
+        <div>
+          <label class="block text-[10px] font-semibold text-slate-500 mb-1" for="backend-url">URL de la Web App de Apps Script</label>
+          <input type="url" id="backend-url" required placeholder="https://script.google.com/macros/s/.../exec" 
+                 class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 outline-none shadow-sm focus:border-brand-500">
+        </div>
+
+        <div class="pt-3 flex gap-3">
+          <button type="button" onclick="clearBackendConfig()" class="flex-1 bg-white hover:bg-slate-50 text-slate-500 border border-slate-200 py-2.5 rounded-xl text-xs font-semibold transition shadow-sm">
+            Limpiar Config
+          </button>
+          <button type="submit" class="flex-1 bg-brand-500 hover:bg-brand-600 text-white py-2.5 rounded-xl text-xs font-semibold transition shadow-md shadow-brand-500/10">
+            Guardar y Conectar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Color corporativo para botones de confirmación
+    const SWAL_CONFIRM_COLOR = '#2b4299';
+
+    // 1. Estructura de Items de los Checklists
+    const checklistAntenas = [
+      { id: 'earth_antenna', label: 'Puesta a Tierra antena', detail: 'Revisión de Jabalina' },
+      { id: 'earth_box', label: 'Puesta a Tierra Caja Estanco', detail: 'Revisión de Jabalina' },
+      { id: 'surge_protector', label: 'Protector de sobretensión', detail: 'Control de estado' },
+      { id: 'suppressor', label: 'Supresor', detail: 'Verificación de conexiones' },
+      { id: 'box_reorganization', label: 'Reordenamiento de caja de estanco', detail: 'Permite marcar si requirió reemplazo', hasReplacement: true },
+      { id: 'general_cabling', label: 'Cableado General', detail: 'Inspección de desgaste' },
+      { id: 'rj45_connectors', label: 'Cambio de Fichas RJ45', detail: 'Revisar crimpado' },
+      { id: 'water_plugs', label: 'Tapones para agua en antena', detail: 'Revisar presencia y ajuste' },
+      { id: 'antenna_structure', label: 'Infraestructura de la antena', detail: 'Caño, zuncho, abrazaderas' }
+    ];
+
+    const checklistCamaras = [
+      { id: 'cam_earth', label: 'Puesta a Tierra Cámara', detail: 'Revisión de Jabalina' },
+      { id: 'cam_box_earth', label: 'Puesta a Tierra Caja Estanco', detail: 'Revisión de Jabalina' },
+      { id: 'cam_surge', label: 'Protector sobretensión', detail: 'Control de estado' },
+      { id: 'cam_box_reorg', label: 'Reordenamiento de caja de estanco', detail: 'Permite marcar si requirió reemplazo', hasReplacement: true },
+      { id: 'cam_infra', label: 'Infraestructura de la Cámara', detail: 'Pescante, brazo, base, domo y burbuja' },
+      { id: 'cam_edesal', label: 'Acometida de edesal 220v', detail: 'En térmicas, en zapatillas (multímetro)' },
+      { id: 'cam_elec_circuit', label: 'Circuito eléctrico en condiciones', detail: 'Verificación de estado general del circuito' },
+      { id: 'cam_power_source', label: 'Fuente de cámara', detail: 'Bosch (24v) / Coradir (12v)' },
+      { id: 'cam_ups', label: 'UPS', detail: 'Verificación de batería y funcionamiento' },
+      { id: 'cam_motherboard', label: 'Placa base', detail: 'Donde va conectada la fuente' },
+      { id: 'cam_utp_cat6', label: 'Cableado general UTP cat 6', detail: 'Se testea el cableado' },
+      { id: 'cam_rj45', label: 'Revisión de fichas Rj45', detail: 'Verificación de crimpado y estado' },
+      { id: 'cam_onu_power', label: 'Verificar ONU (potencia)', detail: 'Medir potencia de la misma' },
+      { id: 'cam_onu_voltage', label: 'Verificar encendido ONU', detail: 'Medir tensión 12v' }
+    ];
+
+    // Variables de Estado
+    let currentTaskType = ""; // "Antena" o "Cámara"
+    let loggedInUser = null; // { nombre, usuario }
+    
+    // Datos por defecto (offline fallback para pruebas locales out-of-the-box)
+    let listUsers = [
+      { nombre: "Fede", usuario: "fede" },
+      { nombre: "Técnico Demo", usuario: "demo" }
+    ];
+    let listLocalidades = ["San Luis", "Villa Mercedes", "Merlo", "Juana Koslay"];
+    let listEquipos = [
+      { localidad: "San Luis", nombre: "ANT-1092 WiFi", tipo: "Wi-Fi", tipoDetalle: "AP Outdoor Ubiquiti", zona: "Plaza Central", qr: "QR-ANT-1092" },
+      { localidad: "San Luis", nombre: "ANT-1100 Enlace", tipo: "Wi-Fi", tipoDetalle: "Enlace Cambium", zona: "Escuela N° 12", qr: "QR-ANT-1100" },
+      { localidad: "San Luis", nombre: "CAM-01 Domo Central", tipo: "Cámara", tipoDetalle: "Domo Bosch 24v", zona: "Esquina Rivadavia y Mitre", qr: "QR-CAM-01" },
+      { localidad: "San Luis", nombre: "CAM-02 Entrada", tipo: "Cámara", tipoDetalle: "Coradir Fija 12v", zona: "Acceso Municipalidad", qr: "QR-CAM-02" },
+      { localidad: "Villa Mercedes", nombre: "ANT-0810 AP", tipo: "Wi-Fi", tipoDetalle: "AP Mikrotik", zona: "Parque Costanera", qr: "QR-ANT-0810" },
+      { localidad: "Villa Mercedes", nombre: "CAM-03 Domo Acceso", tipo: "Cámara", tipoDetalle: "Domo Bosch 24v", zona: "Rotonda de Ingreso", qr: "QR-CAM-03" },
+      { localidad: "Merlo", nombre: "ANT-0520 AP Merlo", tipo: "Wi-Fi", tipoDetalle: "AP Outdoor Ubiquiti", zona: "Terminal de Omnibus", qr: "QR-ANT-0520" },
+      { localidad: "Merlo", nombre: "CAM-04 Domo Plaza", tipo: "Cámara", tipoDetalle: "Domo Bosch 24v", zona: "Plaza Sobremonte", qr: "QR-CAM-04" }
+    ];
+    
+    let photoBeforeData = null; // Base64
+    let photoAfterData = null; // Base64
+    
+    let currentGpsData = null;
+    let isBackendConnected = false;
+    let webAppUrl = "";
+
+    // Inicialización al cargar el documento
+    document.addEventListener("DOMContentLoaded", () => {
+      // Registrar Service Worker para soporte PWA Offline
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+          .then((reg) => console.log('Service Worker registrado correctamente.', reg.scope))
+          .catch((err) => console.warn('Error al registrar Service Worker.', err));
+      }
+
+      // Re-inicializar iconos Lucide
+      lucide.createIcons();
+
+      // Cargar configuraciones de backend
+      initializeBackend();
+
+      // Cargar lista de usuarios, equipos y localidades guardados localmente
+      const cachedUsers = localStorage.getItem('cached_users');
+      const cachedEquipos = localStorage.getItem('cached_equipos');
+      const cachedLocalidades = localStorage.getItem('cached_localidades');
+      if (cachedUsers) listUsers = JSON.parse(cachedUsers);
+      if (cachedEquipos) listEquipos = JSON.parse(cachedEquipos);
+      if (cachedLocalidades) listLocalidades = JSON.parse(cachedLocalidades);
+
+      // Sincronizar datos dinámicos si estamos online
+      syncDynamicData();
+
+      // Monitorear estado de conexión
+      window.addEventListener('online', updateNetworkStatus);
+      window.addEventListener('offline', updateNetworkStatus);
+      updateNetworkStatus();
+
+      // Verificar si hay una sesión activa de técnico
+      const savedUser = localStorage.getItem('logged_in_user');
+      if (savedUser) {
+        loggedInUser = JSON.parse(savedUser);
+        showScreenSelection();
+      } else {
+        showScreenLogin();
+      }
+
+      // Procesar cola de reportes guardados offline si estamos online
+      processOfflineQueue();
+    });
+
+    // 2. Control de Pantallas
+    function showScreenLogin() {
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('selection-screen').classList.add('hidden');
+      document.getElementById('main-form-screen').classList.add('hidden');
+      document.getElementById('login-username').value = '';
+    }
+
+    function showScreenSelection() {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('selection-screen').classList.remove('hidden');
+      document.getElementById('main-form-screen').classList.add('hidden');
+      
+      document.getElementById('welcome-user-name').innerText = loggedInUser.nombre;
+      lucide.createIcons();
+    }
+
+    function goBackToSelection() {
+      Swal.fire({
+        title: '¿Volver al menú?',
+        text: 'Se perderán los datos completados en este formulario.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: SWAL_CONFIRM_COLOR,
+        cancelButtonColor: '#1e293b',
+        confirmButtonText: 'Sí, volver',
+        cancelButtonText: 'Cancelar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          resetForm();
+          showScreenSelection();
+        }
+      });
+    }
+
+    // 3. Inicio y Cierre de Sesión
+    function handleLogin(event) {
+      event.preventDefault();
+      const usernameInput = document.getElementById('login-username').value.trim().toLowerCase();
+      
+      if (!usernameInput) return;
+
+      // Buscar usuario en base de datos local
+      const user = listUsers.find(u => u.usuario === usernameInput);
+      
+      if (user) {
+        loggedInUser = user;
+        localStorage.setItem('logged_in_user', JSON.stringify(user));
+        showScreenSelection();
+      } else {
+        // Fallback: Si no hay conexión o la base de datos está vacía, permitir acceso como demo temporal
+        if (listUsers.length === 0) {
+          loggedInUser = { nombre: usernameInput, usuario: usernameInput };
+          localStorage.setItem('logged_in_user', JSON.stringify(loggedInUser));
+          showScreenSelection();
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Usuario no registrado',
+            text: 'Verificá que el nombre de usuario esté en la pestaña "user" de tu Google Sheets.',
+            confirmButtonColor: SWAL_CONFIRM_COLOR
+          });
+        }
+      }
+    }
+
+    function handleLogout() {
+      loggedInUser = null;
+      localStorage.removeItem('logged_in_user');
+      showScreenLogin();
+    }
+
+    function selectTask(taskType) {
+      currentTaskType = taskType;
+      
+      const formTitle = document.getElementById('form-title');
+      if (taskType === "Camara" || taskType === "Cámara") {
+        formTitle.innerText = "Mantenimiento Cámara";
+      } else {
+        formTitle.innerText = "Mantenimiento Antena WiFi";
+      }
+
+      // Inicializar UI específica
+      populateLocationsDropdown();
+      handleLocationChange(); // Limpiar equipos
+      generateChecklistUI();
+      resetForm(); // Limpiar datos de formularios anteriores
+      
+      // Mostrar pantalla del formulario
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('selection-screen').classList.add('hidden');
+      document.getElementById('main-form-screen').classList.remove('hidden');
+
+      // Solicitar señal de GPS
+      requestGPSLocation();
+      lucide.createIcons();
+    }
+
+    // 4. Descarga y Filtrado de Datos de Equipos (Google Sheets)
+    async function syncDynamicData() {
+      if (!isBackendConnected || !navigator.onLine) {
+        updateSyncStatus("Offline - Usando base de datos guardada");
+        return;
+      }
+
+      updateSyncStatus("Sincronizando base de datos...");
+      try {
+        const response = await fetch(webAppUrl, { method: "GET" });
+        if (!response.ok) throw new Error("Error al consultar Web App");
+        
+        const result = await response.json();
+        if (result.success) {
+          listUsers = result.users || [];
+          listEquipos = result.equipos || [];
+          listLocalidades = result.localidades || [];
+
+          // Guardar en almacenamiento offline para posterior uso
+          localStorage.setItem('cached_users', JSON.stringify(listUsers));
+          localStorage.setItem('cached_equipos', JSON.stringify(listEquipos));
+          localStorage.setItem('cached_localidades', JSON.stringify(listLocalidades));
+
+          updateSyncStatus("Base de datos actualizada");
+          populateLocationsDropdown();
+        }
+      } catch (err) {
+        console.warn("Falla de sincronización dinámica: ", err);
+        updateSyncStatus("Offline - Error al actualizar");
+      }
+    }
+
+    function updateSyncStatus(text) {
+      const textSpan = document.getElementById('sync-status-text');
+      const dot = document.querySelector('#sync-status-indicator span');
+      if (textSpan) textSpan.innerText = text;
+      
+      if (dot) {
+        if (text.includes("actualizada") || text.includes("conectado")) {
+          dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
+        } else if (text.includes("Sincronizando")) {
+          dot.className = "w-1.5 h-1.5 rounded-full bg-brand-500 animate-ping";
+        } else {
+          dot.className = "w-1.5 h-1.5 rounded-full bg-amber-500";
+        }
+      }
+    }
+
+    function handleLocationSearch() {
+      populateLocationsDropdown();
+    }
+
+    function populateLocationsDropdown() {
+      const locationSelect = document.getElementById('equipment-location');
+      const searchInput = document.getElementById('location-search');
+      const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : "";
+      
+      locationSelect.innerHTML = '<option value="" disabled selected>Elegir localidad...</option>';
+
+      // Usar la lista dinámica listLocalidades (que viene de la hoja user col E)
+      let filtered = listLocalidades.filter(l => l);
+
+      if (searchQuery) {
+        filtered = filtered.filter(l => l.toLowerCase().includes(searchQuery));
+      }
+
+      if (filtered.length === 0) {
+        locationSelect.innerHTML = '<option value="" disabled selected>No se encontraron localidades</option>';
+        return;
+      }
+
+      filtered.sort().forEach(loc => {
+        const option = document.createElement('option');
+        option.value = loc;
+        option.innerText = loc;
+        locationSelect.appendChild(option);
+      });
+
+      // Auto-seleccionar si solo queda una localidad y el usuario está buscando
+      if (filtered.length === 1 && searchQuery) {
+        locationSelect.selectedIndex = 1;
+        handleLocationChange();
+      }
+    }
+
+    function handleLocationChange() {
+      // Limpiar buscador de equipos al cambiar de localidad
+      const searchInput = document.getElementById('equipment-search');
+      if (searchInput) searchInput.value = "";
+      
+      updateEquipmentList();
+    }
+
+    function handleEquipmentSearch() {
+      updateEquipmentList();
+    }
+
+    function updateEquipmentList() {
+      const locationSelect = document.getElementById('equipment-location');
+      const equipmentSelect = document.getElementById('equipment-name');
+      const selectedLocation = locationSelect.value;
+      const searchInput = document.getElementById('equipment-search');
+      const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+      equipmentSelect.innerHTML = '<option value="" disabled selected>Elegir equipo...</option>';
+
+      if (!selectedLocation) {
+        equipmentSelect.innerHTML = '<option value="" disabled selected>Seleccioná una localidad primero...</option>';
+        showEquipmentDetails();
+        return;
+      }
+
+      // Filtrar equipos de la localidad seleccionada y del tipo correspondiente
+      let filtered = listEquipos.filter(e => {
+        if (e.localidad !== selectedLocation) return false;
+        
+        const tipoLower = (e.tipo || "").toLowerCase();
+        const nombreLower = (e.nombre || "").toLowerCase();
+        
+        // Si no hay tipo especificado en la base de datos, lo incluimos por defecto
+        if (!tipoLower) return true;
+        
+        // Detección robusta (por columna de tipo, por nombre de equipo, o variantes de codificación UTF-8 como cã¡mara)
+        if (currentTaskType === "Antena") {
+          const isAntenaTipo = tipoLower.includes("wi-fi") || tipoLower.includes("wifi") || tipoLower.includes("antena") || tipoLower.includes("enlace");
+          const isAntenaNombre = nombreLower.includes("ant") || nombreLower.includes("wifi") || nombreLower.includes("ap") || nombreLower.includes("enlace");
+          return isAntenaTipo || isAntenaNombre;
+        } else {
+          const isCamaraTipo = tipoLower.includes("cámara") || tipoLower.includes("camara") || tipoLower.includes("cã") || tipoLower.includes("video") || tipoLower.includes("cam");
+          const isCamaraNombre = nombreLower.includes("cam") || nombreLower.includes("cámara") || nombreLower.includes("video") || nombreLower.includes("domo");
+          return isCamaraTipo || isCamaraNombre;
+        }
+      });
+
+      // FALLBACK DE SEGURIDAD: Si no hay equipos filtrados para esa localidad y tipo, 
+      // mostramos todos los equipos de la localidad para que el técnico no quede bloqueado
+      if (filtered.length === 0) {
+        console.warn(`No se encontraron equipos del tipo ${currentTaskType} para la localidad ${selectedLocation}. Mostrando todos como fallback.`);
+        filtered = listEquipos.filter(e => e.localidad === selectedLocation);
+      }
+
+      // Aplicar filtro de búsqueda de texto si existe
+      if (searchQuery) {
+        filtered = filtered.filter(e => e.nombre.toLowerCase().includes(searchQuery));
+      }
+
+      if (filtered.length === 0) {
+        equipmentSelect.innerHTML = '<option value="" disabled selected>No se encontraron equipos</option>';
+        showEquipmentDetails();
+        return;
+      }
+
+      filtered.sort((a,b) => a.nombre.localeCompare(b.nombre)).forEach(eq => {
+        const option = document.createElement('option');
+        option.value = eq.nombre;
+        option.innerText = eq.nombre;
+        equipmentSelect.appendChild(option);
+      });
+
+      // Seleccionar automáticamente si solo queda uno
+      if (filtered.length === 1 && searchQuery) {
+        equipmentSelect.selectedIndex = 1;
+      }
+
+      // Actualizar visualización de detalles del equipo
+      showEquipmentDetails();
+    }
+
+    function showEquipmentDetails() {
+      const select = document.getElementById('equipment-name');
+      const container = document.getElementById('equipment-details-container');
+      const typeSpan = document.getElementById('detail-eq-type');
+      const zoneSpan = document.getElementById('detail-eq-zone');
+      const selectedValue = select.value;
+
+      if (!selectedValue || selectedValue === "" || select.selectedIndex === 0) {
+        container.classList.add('hidden', 'opacity-0', 'translate-y-[-10px]');
+        container.classList.remove('grid');
+        return;
+      }
+
+      // Buscar equipo en la lista
+      const selectedLocation = document.getElementById('equipment-location').value;
+      const eq = listEquipos.find(e => e.nombre === selectedValue && e.localidad === selectedLocation);
+
+      if (eq) {
+        typeSpan.innerText = eq.tipoDetalle || '--';
+        zoneSpan.innerText = eq.zona || '--';
+        
+        if (container.classList.contains('hidden')) {
+          container.classList.remove('hidden');
+          container.classList.add('grid');
+          // Forzar reflujo para activar la transición
+          container.offsetHeight;
+          container.classList.remove('opacity-0', 'translate-y-[-10px]');
+        }
+      } else {
+        container.classList.add('hidden', 'opacity-0', 'translate-y-[-10px]');
+        container.classList.remove('grid');
+      }
+    }
+
+    // 5. Generación Dinámica del Checklist (Diseño Táctil Premium)
+    function generateChecklistUI() {
+      const container = document.getElementById('checklist-container');
+      container.innerHTML = '';
+
+      const items = currentTaskType === "Antena" ? checklistAntenas : checklistCamaras;
+
+      items.forEach((item) => {
+        const itemCard = document.createElement('div');
+        itemCard.className = 'glass rounded-xl p-3.5 space-y-3 border border-slate-200/60 transition hover:border-slate-300/80 bg-white/50 shadow-sm';
+        itemCard.id = `card-${item.id}`;
+
+        let replacementOptionHtml = '';
+        if (item.hasReplacement) {
+          replacementOptionHtml = `
+            <label class="flex items-center gap-2 px-2.5 py-1.5 bg-slate-100 rounded-lg border border-slate-200 select-none cursor-pointer">
+              <input type="checkbox" id="replaced-${item.id}" class="w-4 h-4 rounded text-brand-500 focus:ring-brand-500 bg-white border-slate-300">
+              <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">¿Reemplazado?</span>
+            </label>
+          `;
+        }
+
+        itemCard.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-xs font-bold text-slate-800">${item.label}</h3>
+              <p class="text-[10px] text-slate-500 mt-0.5">${item.detail}</p>
+            </div>
+            ${replacementOptionHtml}
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <!-- Botón OK -->
+            <button type="button" onclick="setCheckStatus('${item.id}', 'OK')" id="btn-${item.id}-ok"
+                    class="flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-slate-200 bg-slate-100/40 text-slate-500 text-xs font-bold transition hover:bg-slate-100 hover:text-slate-700 active:scale-95 shadow-sm">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              <span>OK</span>
+            </button>
+            
+            <!-- Botón NO OK -->
+            <button type="button" onclick="setCheckStatus('${item.id}', 'NO_OK')" id="btn-${item.id}-nook"
+                    class="flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-slate-200 bg-slate-100/40 text-slate-500 text-xs font-bold transition hover:bg-slate-100 hover:text-slate-700 active:scale-95 shadow-sm">
+              <i data-lucide="x" class="w-4 h-4"></i>
+              <span>NO OK</span>
+            </button>
+          </div>
+
+          <!-- Input Oculto de Estado del Check (obligatorio completar antes de enviar) -->
+          <input type="hidden" id="status-${item.id}" name="status-${item.id}" required>
+          
+          <!-- Entrada de nota rápida opcional -->
+          <div id="note-container-${item.id}" class="hidden pt-1">
+            <input type="text" id="note-${item.id}" placeholder="Nota / Detalle sobre el estado..." 
+                   class="w-full bg-white border border-slate-200 focus:border-brand-500 rounded-lg px-3 py-2 text-[11px] text-slate-800 placeholder-slate-400 transition outline-none shadow-sm">
+          </div>
+        `;
+
+        container.appendChild(itemCard);
+      });
+      lucide.createIcons();
+    }
+
+    // Cambiar estado visual y de datos para un ítem del checklist
+    function setCheckStatus(itemId, status) {
+      const okBtn = document.getElementById(`btn-${itemId}-ok`);
+      const nookBtn = document.getElementById(`btn-${itemId}-nook`);
+      const statusInput = document.getElementById(`status-${itemId}`);
+      const noteContainer = document.getElementById(`note-container-${itemId}`);
+      const card = document.getElementById(`card-${itemId}`);
+
+      statusInput.value = status;
+
+      if (status === 'OK') {
+        okBtn.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 text-xs font-bold transition active:scale-95 shadow-sm";
+        nookBtn.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-slate-200 bg-slate-100/40 text-slate-400 text-xs font-bold transition opacity-60 active:scale-95";
+        card.classList.remove('border-rose-200', 'bg-rose-50/30');
+        card.classList.add('border-emerald-200', 'bg-emerald-50/30');
+        noteContainer.classList.add('hidden');
+      } else {
+        okBtn.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-slate-200 bg-slate-100/40 text-slate-400 text-xs font-bold transition opacity-60 active:scale-95";
+        nookBtn.className = "flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-rose-300 bg-rose-50 text-rose-700 text-xs font-bold transition active:scale-95 shadow-sm";
+        card.classList.remove('border-emerald-200', 'bg-emerald-50/30');
+        card.classList.add('border-rose-200', 'bg-rose-50/30');
+        noteContainer.classList.remove('hidden');
+        document.getElementById(`note-${itemId}`).focus();
+      }
+    }
+
+    // 6. Geolocalización por GPS
+    function requestGPSLocation() {
+      const gpsCard = document.getElementById('gps-card');
+      const gpsPulse = document.getElementById('gps-pulse');
+      const gpsIcon = document.getElementById('gps-icon');
+      const gpsStatus = document.getElementById('gps-status');
+      const gpsCoordinates = document.getElementById('gps-coordinates');
+
+      gpsPulse.classList.add('pulse-ring');
+      gpsIcon.className = "w-4 h-4 text-brand-500 relative z-10 animate-bounce";
+      gpsStatus.innerText = "Localizando posición...";
+      gpsStatus.className = "text-xs font-bold text-brand-600";
+      gpsCard.className = "bg-white border border-brand-500/30 rounded-xl p-3.5 flex items-center justify-between transition-colors shadow-sm";
+
+      if (!navigator.geolocation) {
+        gpsStatus.innerText = "GPS no soportado en este navegador";
+        gpsStatus.className = "text-xs font-bold text-rose-600";
+        gpsPulse.classList.remove('pulse-ring');
+        gpsIcon.className = "w-4 h-4 text-rose-500 relative z-10";
+        return;
+      }
+
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      };
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          currentGpsData = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy
+          };
+
+          document.getElementById('gps-lat').value = currentGpsData.latitude;
+          document.getElementById('gps-lng').value = currentGpsData.longitude;
+          document.getElementById('gps-acc').value = currentGpsData.accuracy;
+
+          gpsStatus.innerText = "GPS Conectado y Preciso";
+          gpsStatus.className = "text-xs font-bold text-emerald-700";
+          gpsCoordinates.innerText = `Lat: ${currentGpsData.latitude.toFixed(6)}, Lng: ${currentGpsData.longitude.toFixed(6)} (+/- ${Math.round(currentGpsData.accuracy)}m)`;
+          gpsPulse.classList.remove('pulse-ring');
+          gpsIcon.className = "w-4 h-4 text-emerald-400 relative z-10";
+          gpsCard.className = "bg-emerald-50/50 border border-emerald-200 rounded-xl p-3.5 flex items-center justify-between transition-colors shadow-sm";
+        },
+        (error) => {
+          console.warn("GPS Error: ", error);
+          gpsPulse.classList.remove('pulse-ring');
+          gpsIcon.className = "w-4 h-4 text-rose-500 relative z-10";
+          gpsCard.className = "bg-rose-50/50 border border-rose-200 rounded-xl p-3.5 flex items-center justify-between transition-colors shadow-sm";
+          
+          if (error.code === 1) {
+            gpsStatus.innerText = "Permiso de GPS denegado por el usuario";
+          } else {
+            gpsStatus.innerText = "Señal GPS débil o no disponible";
+          }
+          gpsStatus.className = "text-xs font-bold text-rose-700";
+          gpsCoordinates.innerText = "Ingresá coordenadas manualmente o reintentá";
+        },
+        options
+      );
+    }
+
+    // 7. Carga y Compresión de Fotos (Antes y Después)
+    function handlePhotoSelect(event, type) {
+      const files = event.target.files;
+      if (!files.length) return;
+
+      const file = files[0];
+      const reader = new FileReader();
+
+      Swal.fire({
+        title: 'Comprimiendo imagen...',
+        text: 'Optimizando para envío rápido a la planilla de cálculo',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
+      reader.onload = function(e) {
+        const img = new Image();
+        img.src = e.target.result;
+
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let max_width = 1200; // Alta resolución (ideal para leer números de serie/detalles)
+          let quality = 0.75;   // Excelente calidad visual
+          let compressedDataUrl = "";
+          let attempts = 0;
+
+          // Bucle de compresión adaptativo con límite de 200.000 caracteres (máxima calidad para Drive/Local Storage)
+          do {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > max_width) {
+              height = Math.round((height * max_width) / width);
+              width = max_width;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+
+            compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+
+            // Si el texto base64 supera el límite de seguridad de 200k, bajamos resolución y calidad
+            if (compressedDataUrl.length > 200000) {
+              max_width = Math.round(max_width * 0.85); // Reducir 15% resolución
+              quality = Math.max(0.4, quality - 0.1);    // Reducir calidad (mínimo 40%)
+            }
+            attempts++;
+          } while (compressedDataUrl.length > 200000 && attempts < 5);
+          
+          if (type === 'before') {
+            photoBeforeData = compressedDataUrl;
+            updatePhotoPreview('before', compressedDataUrl);
+          } else {
+            photoAfterData = compressedDataUrl;
+            updatePhotoPreview('after', compressedDataUrl);
+          }
+
+          Swal.close();
+        }
+      };
+
+      reader.readAsDataURL(file);
+      event.target.value = ''; // Resetear input
+    }
+
+    function updatePhotoPreview(type, dataUrl) {
+      const container = document.getElementById(`photo-${type}-container`);
+      container.innerHTML = `
+        <img src="${dataUrl}" class="w-full h-full object-cover rounded-xl">
+        <button type="button" onclick="removePhoto('${type}', event)" 
+                class="absolute top-2 right-2 w-6 h-6 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shadow-lg active:scale-90 transition">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      `;
+      lucide.createIcons();
+    }
+
+    function removePhoto(type, event) {
+      if (event) event.preventDefault();
+      resetPhotoPreview(type);
+    }
+
+    function resetPhotoPreview(type) {
+      if (type === 'before') photoBeforeData = null;
+      else photoAfterData = null;
+      
+      const container = document.getElementById(`photo-${type}-container`);
+      if (type === 'before') {
+        container.innerHTML = `
+          <input type="file" id="photo-before-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelect(event, 'before')">
+          <i data-lucide="camera" class="w-8 h-8 text-slate-500 group-hover:text-accent-400 transition mb-2"></i>
+          <span class="text-xs text-slate-300 font-semibold">Tomar Foto del Estado Inicial</span>
+          <span class="text-[10px] text-slate-500 mt-0.5">Captura la condición del equipo al llegar</span>
+        `;
+      } else {
+        container.innerHTML = `
+          <input type="file" id="photo-after-input" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelect(event, 'after')">
+          <i data-lucide="camera" class="w-8 h-8 text-slate-500 group-hover:text-accent-400 transition mb-2"></i>
+          <span class="text-xs text-slate-300 font-semibold">Tomar Foto del Estado Final</span>
+          <span class="text-[10px] text-slate-500 mt-0.5">Captura el resultado tras realizar el mantenimiento</span>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    // Generación del reporte en PDF local (Offline-friendly)
+    async function generateReportPDF(report) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4'); // A4: 210mm x 297mm
+      
+      const primaryColor = [43, 66, 153]; // #2b4299
+      const accentColor = [76, 174, 189]; // #4caebd
+      const darkTextColor = [30, 41, 59]; // #1e293b
+      const lightBgColor = [248, 250, 252]; // #f8fafc
+      
+      const margin = 15;
+      let y = margin;
+      
+      // 1. Cabecera Premium (Estilo Apple macOS)
+      doc.setFillColor(...primaryColor);
+      doc.rect(0, 0, 210, 26, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(15);
+      doc.text("AUI 4.0", margin, 17);
+      
+      doc.setFont("Helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.text("SISTEMA DE MANTENIMIENTO PREVENTIVO", margin + 25, 16);
+      
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("REPORTE DIGITAL", 210 - margin - 35, 17);
+      
+      y = 36;
+      
+      // 2. Título de la Ficha
+      doc.setTextColor(...primaryColor);
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(12);
+      const isCamara = report.reportType.toLowerCase().indexOf("cam") !== -1;
+      const labelMantenimiento = isCamara ? "PREVENTIVO DE CÁMARAS" : "PREVENTIVO DE ENLACES WI-FI";
+      doc.text(labelMantenimiento, margin, y);
+      y += 6;
+      
+      // Línea decorativa
+      doc.setDrawColor(...accentColor);
+      doc.setLineWidth(0.6);
+      doc.line(margin, y, 210 - margin, y);
+      y += 8;
+      
+      // 3. Bloque de Información del Reporte
+      doc.setFillColor(...lightBgColor);
+      doc.rect(margin, y, 180, 26, 'F');
+      doc.setDrawColor(226, 232, 240); // slate-200
+      doc.setLineWidth(0.3);
+      doc.rect(margin, y, 180, 26);
+      
+      doc.setTextColor(...darkTextColor);
+      doc.setFontSize(9);
+      
+      // Columna 1
+      doc.setFont("Helvetica", "bold");
+      doc.text("Técnico:", margin + 5, y + 6);
+      doc.setFont("Helvetica", "normal");
+      doc.text(report.technicianName, margin + 25, y + 6);
+      
+      doc.setFont("Helvetica", "bold");
+      doc.text("Localidad:", margin + 5, y + 13);
+      doc.setFont("Helvetica", "normal");
+      doc.text(report.location, margin + 25, y + 13);
+      
+      doc.setFont("Helvetica", "bold");
+      doc.text("Equipo:", margin + 5, y + 20);
+      doc.setFont("Helvetica", "normal");
+      doc.text(report.equipmentName, margin + 25, y + 20);
+      
+      // Columna 2
+      const col2X = 110;
+      doc.setFont("Helvetica", "bold");
+      doc.text("Fecha/Hora:", col2X, y + 6);
+      doc.setFont("Helvetica", "normal");
+      const localDate = new Date(report.timestamp).toLocaleString('es-AR');
+      doc.text(localDate, col2X + 22, y + 6);
+      
+      doc.setFont("Helvetica", "bold");
+      doc.text("ID Reporte:", col2X, y + 13);
+      doc.setFont("Helvetica", "normal");
+      doc.text(report.id.substring(0, 15), col2X + 22, y + 13);
+      
+      doc.setFont("Helvetica", "bold");
+      doc.text("GPS:", col2X, y + 20);
+      doc.setFont("Helvetica", "normal");
+      const latVal = report.gps && report.gps.latitude ? report.gps.latitude.toFixed(6) : null;
+      const lngVal = report.gps && report.gps.longitude ? report.gps.longitude.toFixed(6) : null;
+      const accVal = report.gps && report.gps.accuracy ? Math.round(report.gps.accuracy) : null;
+      const gpsString = latVal ? `${latVal}, ${lngVal} (+/- ${accVal}m)` : "Sin coordenadas";
+      doc.text(gpsString, col2X + 22, y + 20);
+      
+      y += 35;
+      
+      // 4. Checklist preventivo
+      doc.setTextColor(...primaryColor);
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("CHECKLIST DE INSPECCIÓN", margin, y);
+      y += 4;
+      
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.4);
+      doc.line(margin, y, 210 - margin, y);
+      y += 6;
+      
+      doc.setFontSize(8.5);
+      doc.setTextColor(...darkTextColor);
+      
+      const checklistItems = isCamara ? checklistCamaras : checklistAntenas;
+      
+      checklistItems.forEach((item) => {
+        if (y > 275) {
+          doc.addPage();
+          y = margin + 10;
+        }
+        
+        const answer = report.checklist[item.id] || { status: "Pnd", note: "" };
+        const statusLabel = answer.status === "OK" ? "OK" : "NO OK";
+        const statusColor = answer.status === "OK" ? [16, 185, 129] : [239, 68, 68];
+        
+        // Fila de fondo gris claro para lectura fácil
+        doc.setFillColor(248, 250, 252);
+        doc.rect(margin, y - 3.5, 180, 6.5, 'F');
+        
+        doc.setFont("Helvetica", "bold");
+        doc.text(item.label, margin + 3, y);
+        
+        doc.setFont("Helvetica", "bold");
+        doc.setTextColor(...statusColor);
+        doc.text(statusLabel, 210 - margin - 15, y);
+        doc.setTextColor(...darkTextColor);
+        
+        let subText = "";
+        if (answer.replaced) {
+          subText += "[Reemplazado] ";
+        }
+        if (answer.note) {
+          subText += `Nota: "${answer.note}"`;
+        }
+        
+        if (subText) {
+          y += 5;
+          doc.setFont("Helvetica", "italic");
+          doc.setTextColor(100, 116, 139);
+          doc.text(subText, margin + 6, y);
+          doc.setTextColor(...darkTextColor);
+          y += 1;
+        }
+        
+        y += 7;
+      });
+      
+      y += 2;
+      
+      // 5. Notas Adicionales
+      if (report.notes) {
+        if (y > 240) {
+          doc.addPage();
+          y = margin + 10;
+        }
+        
+        y += 4;
+        doc.setTextColor(...primaryColor);
+        doc.setFont("Helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text("NOTAS Y OBSERVACIONES GENERALES", margin, y);
+        y += 4;
+        
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin, y, 210 - margin, y);
+        y += 5;
+        
+        doc.setFont("Helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(...darkTextColor);
+        const splitNotes = doc.splitTextToSize(report.notes, 180);
+        doc.text(splitNotes, margin, y);
+        y += (splitNotes.length * 4.5) + 5;
+      }
+      
+      // 6. Evidencias fotográficas (En página nueva para excelente diagramación)
+      doc.addPage();
+      y = margin + 10;
+      
+      doc.setTextColor(...primaryColor);
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text("EVIDENCIAS FOTOGRÁFICAS", margin, y);
+      y += 5;
+      
+      doc.setDrawColor(...accentColor);
+      doc.setLineWidth(0.6);
+      doc.line(margin, y, 210 - margin, y);
+      y += 10;
+      
+      const widthImg = 85;
+      const heightImg = 64;
+      
+      if (report.photoBefore) {
+        try {
+          doc.setFillColor(241, 245, 249);
+          doc.rect(margin, y, widthImg, heightImg, 'F');
+          doc.addImage(report.photoBefore, 'JPEG', margin, y, widthImg, heightImg);
+          
+          doc.setFont("Helvetica", "bold");
+          doc.setFontSize(9.5);
+          doc.setTextColor(...darkTextColor);
+          doc.text("Estado Inicial (Antes)", margin + 2, y + heightImg + 5);
+        } catch (imgErr) {
+          console.error("Error al renderizar foto antes en PDF: ", imgErr);
+        }
+      }
+      
+      if (report.photoAfter) {
+        try {
+          const xAfter = 210 - margin - widthImg;
+          doc.setFillColor(241, 245, 249);
+          doc.rect(xAfter, y, widthImg, heightImg, 'F');
+          doc.addImage(report.photoAfter, 'JPEG', xAfter, y, widthImg, heightImg);
+          
+          doc.setFont("Helvetica", "bold");
+          doc.setFontSize(9.5);
+          doc.setTextColor(...darkTextColor);
+          doc.text("Estado Final (Después)", xAfter + 2, y + heightImg + 5);
+        } catch (imgErr) {
+          console.error("Error al renderizar foto despues en PDF: ", imgErr);
+        }
+      }
+      
+      // Footer final de la firma del desarrollador
+      doc.setFont("Helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(148, 163, 184); // slate-400
+      doc.text("FKdesing • PREVENTIVOS AUI 4.0", margin, 285);
+      
+      // Guardar PDF con formato de nombre solicitado: nombreantenafecha.pdf
+      const cleanEqName = report.equipmentName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const cleanDate = new Date(report.timestamp).toISOString().split('T')[0].replace(/-/g, '');
+      const filename = `${cleanEqName}${cleanDate}.pdf`;
+      
+      doc.save(filename);
+    }
+
+    // 8. Envío del Formulario (Gestión de Online/Offline y Sheets)
+    async function handleSubmit(event) {
+      event.preventDefault();
+
+      const location = document.getElementById('equipment-location').value;
+      const equipmentName = document.getElementById('equipment-name').value;
+
+      if (!location || !equipmentName) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Campos requeridos',
+          text: 'Por favor, completa localidad y equipo.',
+          confirmButtonColor: SWAL_CONFIRM_COLOR
+        });
+        return;
+      }
+
+      // Verificar que se hayan respondido todos los puntos del checklist activo
+      const items = currentTaskType === "Antena" ? checklistAntenas : checklistCamaras;
+      let checklistCompleted = true;
+      let incompleteItem = "";
+
+      for (let item of items) {
+        const statusVal = document.getElementById(`status-${item.id}`).value;
+        if (!statusVal) {
+          checklistCompleted = false;
+          incompleteItem = item.label;
+          break;
+        }
+      }
+
+      if (!checklistCompleted) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Checklist incompleto',
+          text: `Por favor, marcá OK o NO OK para: ${incompleteItem}`,
+          confirmButtonColor: SWAL_CONFIRM_COLOR
+        });
+        return;
+      }
+
+      // Validar fotos obligatorias del antes y del después
+      if (!photoBeforeData || !photoAfterData) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Fotos requeridas',
+          text: 'Debés capturar tanto la Foto del Antes como la Foto del Después/Final.',
+          confirmButtonColor: SWAL_CONFIRM_COLOR
+        });
+        return;
+      }
+
+      // Recopilar datos del checklist
+      const checklistData = {};
+      items.forEach(item => {
+        const status = document.getElementById(`status-${item.id}`).value;
+        const note = document.getElementById(`note-${item.id}`).value.trim();
+        const replacedElement = document.getElementById(`replaced-${item.id}`);
+        const isReplaced = replacedElement ? replacedElement.checked : null;
+
+        checklistData[item.id] = {
+          status: status,
+          note: note,
+          ...(isReplaced !== null && { replaced: isReplaced })
+        };
+      });
+
+      // Crear Reporte
+      const report = {
+        id: 'rep_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        reportType: currentTaskType,
+        technicianName: loggedInUser.nombre,
+        location: location,
+        equipmentName: equipmentName,
+        timestamp: new Date().toISOString(),
+        gps: currentGpsData || { latitude: null, longitude: null, accuracy: null },
+        checklist: checklistData,
+        photoBefore: photoBeforeData,
+        photoAfter: photoAfterData,
+        notes: document.getElementById('notes').value.trim()
+      };
+
+      Swal.fire({
+        title: 'Procesando reporte...',
+        text: 'Guardando los datos del mantenimiento',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
+      try {
+        if (navigator.onLine && isBackendConnected) {
+          // Enviar reporte directamente a Google Sheets
+          await uploadReportToBackend(report);
+          Swal.fire({
+            icon: 'success',
+            title: '¡Reporte Enviado!',
+            text: `El reporte de ${currentTaskType} se guardó en Google Sheets y se generó el PDF de respaldo.`,
+            confirmButtonColor: SWAL_CONFIRM_COLOR
+          });
+        } else {
+          // Guardar reporte localmente si está sin conexión
+          saveReportToOfflineQueue(report);
+          Swal.fire({
+            icon: 'info',
+            title: 'Guardado sin conexión',
+            text: 'Guardado en la cola local de tu celular. Se subirá automáticamente al recuperar internet. Se descargará el PDF de respaldo.',
+            confirmButtonColor: SWAL_CONFIRM_COLOR
+          });
+        }
+
+        // Generar y descargar el PDF de respaldo localmente en el dispositivo
+        try {
+          await generateReportPDF(report);
+        } catch (pdfErr) {
+          console.error("Error al generar PDF: ", pdfErr);
+        }
+
+        // Limpiar e ir a la pantalla de selección
+        resetForm();
+        showScreenSelection();
+
+      } catch (err) {
+        console.error("Submit error: ", err);
+        saveReportToOfflineQueue(report);
+        
+        // Generar y descargar el PDF de respaldo localmente en el dispositivo incluso en falla
+        try {
+          await generateReportPDF(report);
+        } catch (pdfErr) {
+          console.error("Error al generar PDF: ", pdfErr);
+        }
+
+        Swal.fire({
+          icon: 'info',
+          title: 'Reporte respaldado localmente',
+          text: 'Falla al conectar a la nube. Guardado en la cola local para posterior sincronización y PDF generado.',
+          confirmButtonColor: SWAL_CONFIRM_COLOR
+        });
+        resetForm();
+        showScreenSelection();
+      }
+    }
+
+    function resetForm() {
+      // Limpiar selects y buscadores
+      document.getElementById('equipment-location').value = '';
+      document.getElementById('equipment-name').value = '';
+      
+      const locationSearchInput = document.getElementById('location-search');
+      if (locationSearchInput) locationSearchInput.value = '';
+      
+      const searchInput = document.getElementById('equipment-search');
+      if (searchInput) searchInput.value = '';
+      
+      document.getElementById('notes').value = '';
+      
+      // Repoblar dropdowns a su estado inicial completo
+      populateLocationsDropdown();
+      updateEquipmentList();
+      
+      // Limpiar fotos
+      photoBeforeData = null;
+      photoAfterData = null;
+      resetPhotoPreview('before');
+      resetPhotoPreview('after');
+
+      // Resetear checklist
+      generateChecklistUI();
+
+      // Recargar GPS
+      requestGPSLocation();
+    }
+
+    // 9. Almacenamiento Offline en LocalStorage
+    function saveReportToOfflineQueue(report) {
+      let queue = JSON.parse(localStorage.getItem('offline_reports_queue')) || [];
+      queue.push(report);
+      localStorage.setItem('offline_reports_queue', JSON.stringify(queue));
+      updateNetworkStatus();
+    }
+
+    async function processOfflineQueue() {
+      if (!navigator.onLine || !isBackendConnected) return;
+
+      let queue = JSON.parse(localStorage.getItem('offline_reports_queue')) || [];
+      if (queue.length === 0) return;
+
+      console.log(`Intentando sincronizar ${queue.length} reportes offline...`);
+
+      const failedToSync = [];
+
+      for (let report of queue) {
+        try {
+          await uploadReportToBackend(report);
+          console.log(`Reporte offline ${report.id} sincronizado exitosamente.`);
+        } catch (err) {
+          console.error(`Error al sincronizar reporte offline ${report.id}:`, err);
+          failedToSync.push(report);
+        }
+      }
+
+      localStorage.setItem('offline_reports_queue', JSON.stringify(failedToSync));
+      
+      if (queue.length - failedToSync.length > 0) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: `¡Se sincronizaron ${queue.length - failedToSync.length} reportes offline!`,
+          showConfirmButton: false,
+          timer: 3500
+        });
+      }
+
+      updateNetworkStatus();
+    }
+
+    // Actualiza el indicador online/offline y el contador de reportes guardados
+    function updateNetworkStatus() {
+      const badge = document.getElementById('connection-badge');
+      const offlineBadge = document.getElementById('offline-counter-badge');
+      const offlineCountSpan = document.getElementById('offline-count');
+      
+      const queue = JSON.parse(localStorage.getItem('offline_reports_queue')) || [];
+      const offlineCount = queue.length;
+
+      if (navigator.onLine) {
+        badge.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+        badge.querySelector('span:first-child').className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+        badge.querySelector('span:last-child').innerText = "Online";
+        
+        if (offlineCount > 0) {
+          offlineBadge.classList.remove('hidden');
+          offlineCountSpan.innerText = offlineCount;
+          processOfflineQueue();
+        } else {
+          offlineBadge.classList.add('hidden');
+        }
+        
+        // Sincronizar datos dinámicos si estamos online
+        syncDynamicData();
+      } else {
+        badge.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20";
+        badge.querySelector('span:first-child').className = "w-2 h-2 rounded-full bg-rose-500";
+        badge.querySelector('span:last-child').innerText = "Offline";
+
+        if (offlineCount > 0) {
+          offlineBadge.classList.remove('hidden');
+          offlineCountSpan.innerText = offlineCount;
+        } else {
+          offlineBadge.classList.add('hidden');
+        }
+      }
+    }
+
+    // 10. Integración con Google Sheets (Google Apps Script Web App)
+    function initializeBackend() {
+      const savedUrl = localStorage.getItem('backend_url');
+      const alertBox = document.getElementById('backend-alert');
+
+      if (!savedUrl) {
+        alertBox.classList.remove('hidden');
+        isBackendConnected = false;
+        return;
+      }
+
+      webAppUrl = savedUrl;
+      isBackendConnected = true;
+      alertBox.classList.add('hidden');
+      console.log("¡Google Sheets conectado exitosamente!");
+    }
+
+    async function uploadReportToBackend(report) {
+      if (!webAppUrl) throw new Error("Google Apps Script URL no configurada.");
+
+      const response = await fetch(webAppUrl, {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: JSON.stringify(report)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error de red al enviar reporte: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(`Error del servidor: ${result.message}`);
+      }
+
+      return result;
+    }
+
+    // 11. Controles del Modal de Configuración de Backend (Google Sheets)
+    function toggleBackendModal(show) {
+      const modal = document.getElementById('backend-modal');
+      if (show) {
+        const savedUrl = localStorage.getItem('backend_url');
+        if (savedUrl) {
+          document.getElementById('backend-url').value = savedUrl;
+        }
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function saveBackendConfig(event) {
+      event.preventDefault();
+      
+      const url = document.getElementById('backend-url').value.trim();
+
+      localStorage.setItem('backend_url', url);
+      toggleBackendModal(false);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Configuración Guardada',
+        text: 'La app se reiniciará para establecer la conexión con Google Sheets.',
+        confirmButtonColor: SWAL_CONFIRM_COLOR
+      }).then(() => {
+        window.location.reload();
+      });
+    }
+
+    function clearBackendConfig() {
+      localStorage.removeItem('backend_url');
+      toggleBackendModal(false);
+      Swal.fire({
+        icon: 'info',
+        title: 'Configuración Eliminada',
+        text: 'Se borró la URL de Google Sheets. Volviendo a modo Demo Local.',
+        confirmButtonColor: SWAL_CONFIRM_COLOR
+      }).then(() => {
+        window.location.reload();
+      });
+    }
+
+    // 12. Lógica del Lector de Código QR (Offline local decodificación)
+    let html5QrcodeScanner = null;
+
+    function openQrScanner() {
+      document.getElementById('qr-modal').classList.remove('hidden');
+      document.getElementById('qr-modal').classList.add('flex');
+
+      // Crear instancia de lector
+      html5QrcodeScanner = new Html5Qrcode("qr-reader");
+
+      const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+
+      // Iniciar cámara trasera nativa
+      html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        config,
+        onQrCodeSuccess,
+        onQrCodeError
+      ).catch(err => {
+        console.warn("Falla al iniciar la cámara del lector QR:", err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de Cámara',
+          text: 'No se pudo acceder a la cámara trasera. Asegúrate de otorgar los permisos de cámara.',
+          confirmButtonColor: SWAL_CONFIRM_COLOR
+        });
+        closeQrScanner();
+      });
+    }
+
+    function closeQrScanner() {
+      document.getElementById('qr-modal').classList.add('hidden');
+      document.getElementById('qr-modal').classList.remove('flex');
+
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.stop().then(() => {
+          html5QrcodeScanner = null;
+        }).catch(err => {
+          console.warn("Error al apagar el escáner QR:", err);
+          html5QrcodeScanner = null;
+        });
+      }
+    }
+
+    function onQrCodeSuccess(decodedText, decodedResult) {
+      const targetQrText = decodedText.trim();
+      console.log(`QR Detectado: ${targetQrText}`);
+
+      // Buscar coincidencia en la base de datos local usando el campo 'qr' (columna J de la hoja equipos)
+      const foundEquipment = listEquipos.find(e => e.qr && e.qr.toLowerCase() === targetQrText.toLowerCase());
+
+      if (foundEquipment) {
+        // Verificar si el tipo de equipo coincide con la tarea actual
+        let typeMatches = false;
+        const eqType = (foundEquipment.tipo || "").toLowerCase();
+        const eqNombre = (foundEquipment.nombre || "").toLowerCase();
+        if (currentTaskType === "Antena") {
+          typeMatches = !eqType || eqType.includes("antena") || eqType.includes("wifi") || eqType.includes("enlace") ||
+                        eqNombre.includes("ant") || eqNombre.includes("wifi") || eqNombre.includes("ap") || eqNombre.includes("enlace");
+        } else {
+          typeMatches = !eqType || eqType.includes("cámara") || eqType.includes("camara") || eqType.includes("video") || eqType.includes("cam") || eqType.includes("cã") ||
+                        eqNombre.includes("cam") || eqNombre.includes("cámara") || eqNombre.includes("video") || eqNombre.includes("domo");
+        }
+
+        if (!typeMatches) {
+          closeQrScanner();
+          Swal.fire({
+            icon: 'warning',
+            title: 'Tipo de equipo incorrecto',
+            text: `El equipo "${foundEquipment.nombre}" es de tipo "${foundEquipment.tipo || 'Desconocido'}", pero estás realizando un mantenimiento de ${currentTaskType === 'Antena' ? 'Antenas' : 'Cámaras'}.`,
+            confirmButtonColor: SWAL_CONFIRM_COLOR
+          });
+          return;
+        }
+
+        // Detener y cerrar lector
+        closeQrScanner();
+
+        // Mostrar alerta de coincidencia
+        Swal.fire({
+          icon: 'success',
+          title: 'Equipo Identificado',
+          text: `Se seleccionó: ${foundEquipment.nombre} (${foundEquipment.localidad})`,
+          confirmButtonColor: SWAL_CONFIRM_COLOR,
+          timer: 3000
+        });
+
+        // Limpiar buscador de localidades y repoblar select
+        const locationSearch = document.getElementById('location-search');
+        if (locationSearch) locationSearch.value = "";
+        populateLocationsDropdown();
+
+        // Seleccionar Localidad
+        const locationSelect = document.getElementById('equipment-location');
+        locationSelect.value = foundEquipment.localidad;
+
+        // Limpiar buscador de equipos y repoblar select
+        const searchInput = document.getElementById('equipment-search');
+        if (searchInput) searchInput.value = "";
+        updateEquipmentList();
+
+        // Seleccionar Equipo
+        const equipmentSelect = document.getElementById('equipment-name');
+        equipmentSelect.value = foundEquipment.nombre;
+        showEquipmentDetails();
+      } else {
+        // Advertir pero mantener scanner abierto
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'warning',
+          title: 'Código QR no registrado',
+          text: `El código "${targetQrText}" no coincide con ningún equipo en la columna J.`,
+          showConfirmButton: true,
+          confirmButtonColor: SWAL_CONFIRM_COLOR
+        });
+      }
+    }
+
+    function onQrCodeError(errorMessage) {
+      // Callback constante de escaneo continuo. Silenciar errores de lectura por ruido.
+    }
+  </script>
+</body>
+</html>
